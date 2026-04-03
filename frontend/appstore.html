@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Sigma Game Center</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #f2f2f7;
+            padding-bottom: 80px;
+        }
+        
+        /* Header App Store Style */
+        .header {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 0.5px solid rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 34px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .header p {
+            color: #8e8e93;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        
+        /* User Bar */
+        .user-bar {
+            background: white;
+            margin: 15px 20px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .avatar {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .user-details h3 {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+        
+        .user-details p {
+            font-size: 12px;
+            color: #8e8e93;
+        }
+        
+        .score-badge {
+            background: #34c759;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        /* Category Section */
+        .section {
+            margin: 24px 20px;
+        }
+        
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        
+        .section-title a {
+            font-size: 14px;
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        /* Game Grid (App Store Style) */
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        
+        .game-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .game-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+        
+        .game-thumb {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .game-info {
+            padding: 12px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .game-name {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+        
+        .game-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+        }
+        
+        .game-rating {
+            color: #ff9500;
+            font-size: 12px;
+        }
+        
+        .game-plays {
+            color: #8e8e93;
+            font-size: 11px;
+        }
+        
+        /* Featured Banner */
+        .featured-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0 20px 24px;
+            padding: 24px;
+            border-radius: 20px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .featured-banner h3 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .featured-banner p {
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+        
+        .play-button {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+        }
+        
+        /* Modal Game Detail */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        
+        .modal-content {
+            background: white;
+            min-height: 100%;
+            border-radius: 20px 20px 0 0;
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        
+        .modal-header {
+            position: relative;
+            height: 150px;
+            background-size: cover;
+            background-position: center;
+            background-color: #667eea;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.5);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-body {
+            padding: 24px;
+        }
+        
+        .play-action {
+            margin-top: 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #8e8e93;
+            grid-column: 1 / -1;
+        }
+        
+        @media (max-width: 480px) {
+            .games-grid {
+                grid-template-columns: 1fr;
+            }
+            .section-title {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Sigma Game Center</h1>
+        <p>Chọn game, chơi, nhận thưởng</p>
+    </div>
+    
+    <div class="user-bar" id="userBar">
+        <div class="user-info">
+            <div class="avatar" id="avatar">...</div>
+            <div class="user-details">
+                <h3 id="userName">Gamer</h3>
+                <p id="userGroup">Đang kiểm tra nhóm...</p>
+            </div>
+        </div>
+        <div class="score-badge" id="userScore">... điểm</div>
+    </div>
+    
+    <div class="featured-banner" id="featuredBanner">
+        <h3>🔥 Trải nghiệm v1.1</h3>
+        <p>Hệ thống Mini Games đa dạng mới cập nhật. Càng chơi càng cuốn!</p>
+        <button class="play-button" onclick="scrollToGames()">👇 Khám phá ngay</button>
+    </div>
+    
+    <div class="section" id="games-section">
+        <div class="section-title">
+            <span>📱 Nổi bật</span>
+        </div>
+        <div class="games-grid" id="featuredGames">
+            <div class="loading">Đang tải game...</div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">
+            <span>🎮 Tất cả game</span>
+        </div>
+        <div class="games-grid" id="allGames">
+            <div class="loading">Đang tải...</div>
+        </div>
+    </div>
+    
+    <!-- Modal Game Detail -->
+    <div id="gameModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header" id="modalHeader">
+                <button class="close-modal" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <h2 id="modalTitle">Tên Game</h2>
+                <p id="modalDesc" style="margin-top: 10px; color: #555; line-height: 1.5;"></p>
+                
+                <div style="margin-top:20px;">
+                    <button class="play-action" id="btnPlayNow">▶ Chơi Ngay</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzwvvzvkdjiNyE_Bb05A-UExtYyEF2dD1YPUkkyEfM4YVQi3ypRJqaqLnvUoPfS90y8/exec';
+        let userId = localStorage.getItem('sigma_user_id');
+        let userVariant = 'A';
+        let gamesData = [];
+        
+        if (!userId) {
+            userId = 'user_' + Math.random().toString(36).substr(2, 8);
+            localStorage.setItem('sigma_user_id', userId);
+        }
+        
+        async function init() {
+            await loadUserInfo();
+            await loadGames();
+        }
+        
+        async function loadUserInfo() {
+            try {
+                const response = await fetch(`${API_URL}?action=getUserGroup&user_id=${userId}`);
+                const data = await response.json();
+                userVariant = data.variant;
+                document.getElementById('userGroup').innerHTML = `Nhóm ${userVariant}`;
+                document.getElementById('avatar').innerHTML = userVariant;
+                
+                // Load user score
+                const scoreResponse = await fetch(`${API_URL}?action=getUserScore&user_id=${userId}`);
+                const scoreData = await scoreResponse.json();
+                document.getElementById('userScore').innerHTML = `${scoreData.score || 0} điểm`;
+                document.getElementById('userName').innerHTML = `Gamer_${userId.slice(-4)}`;
+            } catch (error) {
+                console.error('Lỗi load user:', error);
+            }
+        }
+        
+        async function loadGames() {
+            try {
+                const response = await fetch(`${API_URL}?action=getGames`);
+                gamesData = await response.json();
+                renderGames();
+            } catch (error) {
+                console.error('Lỗi load games:', error);
+                document.getElementById('featuredGames').innerHTML = '<p style="color:red; padding:20px;">Không thể tải game.</p>';
+                document.getElementById('allGames').innerHTML = '<p style="color:red; padding:20px;">Không thể tải game.</p>';
+            }
+        }
+        
+        function getGameCardHTML(game) {
+            const thumb = game.thumbnail_url || 'https://via.placeholder.com/150';
+            const playsStr = Math.floor(Math.random()*1000 + 100); // mock data lượt chơi
+            return `
+                <div class="game-card" onclick="openGameModal('${game.game_id}')">
+                    <img src="${thumb}" alt="${game.game_name}" class="game-thumb" onerror="this.src='https://via.placeholder.com/150'">
+                    <div class="game-info">
+                        <div class="game-name">${game.game_name}</div>
+                        <div class="game-meta">
+                            <span class="game-rating">★ 4.${Math.floor(Math.random()*9)}</span>
+                            <span class="game-plays">${playsStr} lượt</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderGames() {
+            if (!gamesData || gamesData.length === 0 || gamesData.status === 'error') {
+                document.getElementById('featuredGames').innerHTML = '<p style="padding:20px;">Chưa có game nào đang mở.</p>';
+                document.getElementById('allGames').innerHTML = '';
+                return;
+            }
+            
+            const activeGames = gamesData.filter(g => g.is_active);
+            const featured = activeGames.slice(0, 2);
+            const all = activeGames;
+            
+            document.getElementById('featuredGames').innerHTML = featured.map(g => getGameCardHTML(g)).join('');
+            document.getElementById('allGames').innerHTML = all.map(g => getGameCardHTML(g)).join('');
+        }
+        
+        function openGameModal(gameId) {
+            const game = gamesData.find(g => g.game_id === gameId);
+            if(!game) return;
+            
+            document.getElementById('modalTitle').textContent = game.game_name;
+            document.getElementById('modalDesc').textContent = game.description || 'Không có mô tả.';
+            document.getElementById('modalHeader').style.backgroundImage = `url('${game.thumbnail_url || ''}')`;
+            
+            document.getElementById('btnPlayNow').onclick = () => {
+                alert(`Game [${game.game_name}] logic sẽ được tải iframe hoặc view game tại đây!`);
+                // Trong thực tế, có thể window.location.href = `game.html?id=${gameId}`; 
+                // hoặc embed iframe
+            };
+            
+            document.getElementById('gameModal').style.display = 'block';
+        }
+        
+        function closeModal() {
+            document.getElementById('gameModal').style.display = 'none';
+        }
+        
+        function scrollToGames() {
+            document.getElementById('games-section').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
