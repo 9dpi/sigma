@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sigma Research Platform</title>
+  <meta name="description" content="Nền tảng nghiên cứu gamification và A/B testing — Sigma LiveOps." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===== LOADING OVERLAY ===== -->
+  <div id="loading-overlay" class="loading-overlay">
+    <div class="spinner"></div>
+    <p>Đang kết nối hệ thống…</p>
+  </div>
+
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">Σ</span>
+        <span class="logo-text">Sigma</span>
+        <span class="logo-badge" id="variant-badge">—</span>
+      </div>
+      <nav class="nav">
+        <button class="nav-btn active" data-tab="game-tab" id="navGame">🎮 Game</button>
+        <button class="nav-btn" data-tab="leaderboard-tab" id="navLeaderboard">🏆 Bảng xếp hạng</button>
+        <button class="nav-btn" data-tab="badges-tab" id="navBadges">⭐ Thành tựu</button>
+      </nav>
+      <div class="user-info">
+        <span class="user-label">ID:</span>
+        <code id="display-user-id">—</code>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main">
+
+    <!-- ===== SCORE HERO ===== -->
+    <section class="score-hero">
+      <p class="score-label">Điểm của bạn</p>
+      <div class="score-display" id="score-display">
+        <span id="score">0</span>
+      </div>
+      <div class="score-meta">
+        <span class="group-tag" id="group-tag">Nhóm: —</span>
+        <span class="sep">·</span>
+        <span id="session-plays">0 lượt chơi hôm nay</span>
+      </div>
+    </section>
+
+    <!-- =====  TAB: GAME ===== -->
+    <section class="tab-content active" id="game-tab">
+
+      <!-- Mini Game 1: Click Challenge -->
+      <div class="game-card" id="card-click">
+        <div class="game-card-header">
+          <div class="game-icon">🔘</div>
+          <div>
+            <h2 class="game-title">Click Challenge</h2>
+            <p class="game-desc">Mỗi lần click = điểm thưởng. Phần thưởng phụ thuộc nhóm A/B của bạn.</p>
+          </div>
+        </div>
+        <button class="btn btn-primary pulse" id="clickBtn">
+          <span class="btn-label">Click để nhận điểm!</span>
+          <span class="btn-reward" id="click-reward-hint">+10 điểm</span>
+        </button>
+      </div>
+
+      <!-- Mini Game 2: Spin Wheel -->
+      <div class="game-card" id="card-spin">
+        <div class="game-card-header">
+          <div class="game-icon">🎡</div>
+          <div>
+            <h2 class="game-title">Vòng quay may mắn</h2>
+            <p class="game-desc">Quay ngẫu nhiên để nhận phần thưởng. Nhóm B nhận nhiều hơn!</p>
+          </div>
+        </div>
+        <div class="spin-area">
+          <div class="wheel-visual" id="wheel-visual">
+            <span class="wheel-emoji">🎡</span>
+          </div>
+          <button class="btn btn-secondary" id="spinBtn">
+            <span class="btn-label">Quay ngay!</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mini Game 3: Timed Click -->
+      <div class="game-card" id="card-timed">
+        <div class="game-card-header">
+          <div class="game-icon">⏱️</div>
+          <div>
+            <h2 class="game-title">Timed Click (30 giây)</h2>
+            <p class="game-desc">Click càng nhiều trong 30 giây. Điểm × hệ số nhóm A/B.</p>
+          </div>
+        </div>
+        <div class="timed-area">
+          <div class="timed-stats">
+            <div class="timed-stat">
+              <span class="tstat-val" id="timed-timer">30</span>
+              <span class="tstat-lbl">giây còn lại</span>
+            </div>
+            <div class="timed-stat">
+              <span class="tstat-val" id="timed-clicks">0</span>
+              <span class="tstat-lbl">lần click</span>
+            </div>
+          </div>
+          <button class="btn btn-accent" id="timedBtn">🚀 Bắt đầu</button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ===== TAB: LEADERBOARD ===== -->
+    <section class="tab-content" id="leaderboard-tab">
+      <div class="leaderboard-card">
+        <div class="lb-header">
+          <h2>🏆 Bảng xếp hạng Top 10</h2>
+          <button class="btn btn-sm" id="refreshLbBtn">🔄 Làm mới</button>
+        </div>
+        <div id="leaderboard-list" class="lb-list">
+          <p class="lb-empty">Đang tải…</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== TAB: BADGES ===== -->
+    <section class="tab-content" id="badges-tab">
+      <div class="badges-card">
+        <h2>⭐ Thành tựu của bạn</h2>
+        <div id="badges-list" class="badges-grid">
+          <p class="lb-empty">Đang tải…</p>
+        </div>
+        <div class="all-achievements">
+          <h3>📋 Tất cả thành tựu</h3>
+          <div id="all-achievements-list" class="badges-grid"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== TOAST NOTIFICATION ===== -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- ===== MILESTONE POPUP ===== -->
+  <div id="milestone-popup" class="milestone-popup hidden">
+    <div class="milestone-inner">
+      <div class="milestone-icon" id="milestone-icon">🎉</div>
+      <h3 id="milestone-title">Milestone!</h3>
+      <p id="milestone-msg"></p>
+      <button class="btn btn-primary" id="milestone-close">Tuyệt vời! 🚀</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
