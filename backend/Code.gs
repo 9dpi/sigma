@@ -130,6 +130,19 @@ function doGet(e) {
       return jsonResponse(getGames());
     }
 
+    if (action === 'getInitialData') {
+      const userGroup = getUserGroup(userId);
+      const userScore = getUserScoreVal(userId);
+      const games = getGames();
+      const leaderboard = getLeaderboard(10);
+      const config = getAllConfig();
+      const achievements = getUserAchievements(userId);
+      return jsonResponse({
+        status: 'success',
+        userGroup, userScore, games, leaderboard, config, achievements
+      });
+    }
+
     if (action === 'getStats') {
       return jsonResponse(getStats());
     }

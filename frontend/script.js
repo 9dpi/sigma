@@ -36,9 +36,36 @@ const ACHIEVEMENTS_FALLBACK = [
 ];
 
 // ============================================================
+//   SIGMA CACHE
+// ============================================================
+class SigmaCache {
+    constructor(ttl = 60000) { this.ttl = ttl; }
+    get(key) {
+        const cached = localStorage.getItem(`sigma_cache_${key}`);
+        if (!cached) return null;
+        const { value, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp > this.ttl) {
+            localStorage.removeItem(`sigma_cache_${key}`);
+            return null;
+        }
+        return value;
+    }
+    set(key, value) {
+        localStorage.setItem(`sigma_cache_${key}`, JSON.stringify({ value, timestamp: Date.now() }));
+    }
+}
+const cache = new SigmaCache();
+
+// ============================================================
 //   INIT
 // ============================================================
 async function init() {
+  if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+          .then(() => console.log('SW Registered'))
+          .catch(err => console.error('SW Error:', err));
+  }
+
   // 1. Lấy hoặc tạo user ID
   userId = localStorage.getItem('sigma_user_id');
   if (!userId) {
@@ -53,14 +80,13 @@ async function init() {
   updateScoreDisplay(false);
   setElement('display-user-id', truncate(userId, 14));
 
-  // 2. Fetch config từ API (Phase 4: dynamic A/B config)
-  await fetchConfig();
+  // 2. Fetch toàn bộ data qua InitialData batch
+  await loadInitialData();
 
-  // 3. Lấy nhóm A/B
-  await initUser();
-
-  // 4. Ẩn loading overlay
   hideLoading();
+  
+  // Prefetch leaderboard (Chạy ngầm không đợi)
+  setTimeout(() => loadLeaderboard(), 100);
 
   // 5. Leaderboard auto-refresh mỗi 30 giây
   setInterval(() => {
@@ -96,18 +122,40 @@ async function apiPost(body) {
 }
 
 // ============================================================
-//   FETCH CONFIG (Phase 4 — dynamic A/B)
+//   FETCH INITIAL DATA (Phase 5: Batch API & Caching)
 // ============================================================
-async function fetchConfig() {
+async function loadInitialData() {
   try {
-    const data = await apiGet({ action: 'getConfig', user_id: userId });
-    if (data.status === 'success') {
-      sysConfig = data.data;
-      applyDynamicConfig();
+    const cacheData = cache.get('initialDataMain');
+    if (cacheData) {
+      applyInitialData(cacheData);
+      return;
     }
-  } catch (_) {
-    // Fallback: dùng defaults
+
+    const data = await apiGet({ action: 'getInitialData', user_id: userId });
+    if(data.status === 'success') {
+      cache.set('initialDataMain', data);
+      applyInitialData(data);
+    } else {
+      throw new Error('API return error');
+    }
+  } catch (e) {
+    console.error('Lỗi load initial data:', e);
+    // Fallback
+    userVariant = localStorage.getItem('sigma_variant') || 'A';
+    applyVariantStyle();
   }
+}
+
+function applyInitialData(data) {
+  sysConfig = data.config || {};
+  userVariant = data.userGroup || 'A';
+  localStorage.setItem('sigma_variant', userVariant);
+  
+  applyDynamicConfig();
+  applyVariantStyle();
+  
+  showToast(`🎯 Nhóm của bạn: ${userVariant}`, 'info');
 }
 
 function applyDynamicConfig() {
@@ -140,23 +188,6 @@ function applyVariantStyle() {
     const baseClick = userVariant === 'B' ? 20 : 10;
     clickRewardHint.textContent = `+${baseClick} điểm`;
   }
-}
-
-// ============================================================
-//   USER GROUP (A/B)
-// ============================================================
-async function initUser() {
-  try {
-    const data = await apiGet({ action: 'getUserGroup', user_id: userId });
-    if (data.status === 'success') {
-      userVariant = data.variant;
-    }
-  } catch (_) {
-    userVariant = localStorage.getItem('sigma_variant') || 'A';
-  }
-  localStorage.setItem('sigma_variant', userVariant);
-  applyVariantStyle();
-  showToast(`🎯 Nhóm của bạn: ${userVariant}`, 'info');
 }
 
 // ============================================================

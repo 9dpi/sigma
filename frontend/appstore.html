@@ -269,12 +269,28 @@
             cursor: pointer;
         }
         
-        /* Loading */
+        /* Loading & Skeleton */
         .loading {
             text-align: center;
             padding: 40px;
             color: #8e8e93;
             grid-column: 1 / -1;
+        }
+        
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        .game-card.skeleton {
+            height: 200px;
+            border-radius: 16px;
         }
         
         @media (max-width: 480px) {
@@ -346,6 +362,13 @@
     </div>
 
     <script>
+        // ======= SERVICE WORKER REGISTRATION =======
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Service Worker Registered'))
+                .catch(err => console.error('SW Error:', err));
+        }
+
         const API_URL = 'https://script.google.com/macros/s/AKfycbzwvvzvkdjiNyE_Bb05A-UExtYyEF2dD1YPUkkyEfM4YVQi3ypRJqaqLnvUoPfS90y8/exec';
         let userId = localStorage.getItem('sigma_user_id');
         let userVariant = 'A';
@@ -355,40 +378,74 @@
             userId = 'user_' + Math.random().toString(36).substr(2, 8);
             localStorage.setItem('sigma_user_id', userId);
         }
+
+        // ======= SIGMA CACHE =======
+        class SigmaCache {
+            constructor(ttl = 60000) { this.ttl = ttl; }
+            get(key) {
+                const cached = localStorage.getItem(`sigma_cache_${key}`);
+                if (!cached) return null;
+                const { value, timestamp } = JSON.parse(cached);
+                if (Date.now() - timestamp > this.ttl) {
+                    localStorage.removeItem(`sigma_cache_${key}`);
+                    return null;
+                }
+                return value;
+            }
+            set(key, value) {
+                localStorage.setItem(`sigma_cache_${key}`, JSON.stringify({ value, timestamp: Date.now() }));
+            }
+        }
+        const cache = new SigmaCache();
         
         async function init() {
-            await loadUserInfo();
-            await loadGames();
+            showSkeleton();
+            await loadInitialData();
         }
         
-        async function loadUserInfo() {
+        function showSkeleton() {
+            const skelHTML = `
+                <div class="game-card skeleton"></div>
+                <div class="game-card skeleton"></div>
+                <div class="game-card skeleton"></div>
+                <div class="game-card skeleton"></div>
+            `;
+            document.getElementById('featuredGames').innerHTML = skelHTML;
+            document.getElementById('allGames').innerHTML = skelHTML;
+        }
+
+        async function loadInitialData() {
             try {
-                const response = await fetch(`${API_URL}?action=getUserGroup&user_id=${userId}`);
+                // Check cache first
+                const cacheData = cache.get('initialData');
+                if (cacheData) {
+                    applyInitialData(cacheData);
+                    return;
+                }
+
+                const response = await fetch(`${API_URL}?action=getInitialData&user_id=${userId}`);
                 const data = await response.json();
-                userVariant = data.variant;
-                document.getElementById('userGroup').innerHTML = `Nhóm ${userVariant}`;
-                document.getElementById('avatar').innerHTML = userVariant;
                 
-                // Load user score
-                const scoreResponse = await fetch(`${API_URL}?action=getUserScore&user_id=${userId}`);
-                const scoreData = await scoreResponse.json();
-                document.getElementById('userScore').innerHTML = `${scoreData.score || 0} điểm`;
-                document.getElementById('userName').innerHTML = `Gamer_${userId.slice(-4)}`;
+                if(data.status === 'success') {
+                    cache.set('initialData', data);
+                    applyInitialData(data);
+                } else { throw new Error('API Error'); }
             } catch (error) {
-                console.error('Lỗi load user:', error);
+                console.error('Lỗi load initial data:', error);
+                document.getElementById('featuredGames').innerHTML = '<p style="color:red; padding:20px;">Lỗi kết nối máy chủ.</p>';
+                document.getElementById('allGames').innerHTML = '';
             }
         }
-        
-        async function loadGames() {
-            try {
-                const response = await fetch(`${API_URL}?action=getGames`);
-                gamesData = await response.json();
-                renderGames();
-            } catch (error) {
-                console.error('Lỗi load games:', error);
-                document.getElementById('featuredGames').innerHTML = '<p style="color:red; padding:20px;">Không thể tải game.</p>';
-                document.getElementById('allGames').innerHTML = '<p style="color:red; padding:20px;">Không thể tải game.</p>';
-            }
+
+        function applyInitialData(data) {
+            userVariant = data.userGroup || 'A';
+            document.getElementById('userGroup').innerHTML = `Nhóm ${userVariant}`;
+            document.getElementById('avatar').innerHTML = userVariant;
+            document.getElementById('userScore').innerHTML = `${data.userScore || 0} điểm`;
+            document.getElementById('userName').innerHTML = `Gamer_${userId.slice(-4)}`;
+            
+            gamesData = data.games || [];
+            renderGames();
         }
         
         function getGameCardHTML(game) {
