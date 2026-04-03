@@ -127,6 +127,10 @@
         
         <!-- Panel Báo cáo -->
         <div id="reports-panel" class="panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+               <h2 style="margin: 0; color: #333; font-size: 20px; border-left: 4px solid #667eea; padding-left: 15px;">📊 Báo cáo & Thống kê</h2>
+               <button id="exportJSONBtn" class="btn-success" style="padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; color: white; font-size: 14px; font-weight: bold;">⬇️ Export JSON</button>
+            </div>
             <div class="stats-grid" id="statsGrid">
                 <div class="stat-card">
                     <h3>Tổng số người chơi</h3>
@@ -222,6 +226,22 @@
                     if (panelId === 'reports') loadStats();
                     if (panelId === 'abtest') loadABResults();
                 });
+            });
+            
+            document.getElementById('exportJSONBtn').addEventListener('click', async () => {
+                try {
+                    const response = await fetch(`${API_URL}?action=getStats`);
+                    const stats = await response.json();
+                    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(stats, null, 2));
+                    const dlAnchorElem = document.createElement('a');
+                    dlAnchorElem.setAttribute("href", dataStr);
+                    dlAnchorElem.setAttribute("download", "sigma_report.json");
+                    document.body.appendChild(dlAnchorElem);
+                    dlAnchorElem.click();
+                    dlAnchorElem.remove();
+                } catch (e) {
+                    alert('Lỗi khi xuất file JSON!');
+                }
             });
             
             // Form thêm game
