@@ -1,0 +1,6 @@
+# Bất kỳ file nào thay đổi, yêu cầu review từ chủ sở hữu repo
+*       @9dpi
+
+# Riêng các khu vực nhạy cảm thay đổi backend Code.gs hoặc docs thì cần kỹ thuật viên trưởng kiểm tra
+/backend/   @9dpi
+/docs/      @9dpi
